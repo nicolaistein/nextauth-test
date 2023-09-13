@@ -4,6 +4,7 @@ import FacebookProvider from "next-auth/providers/facebook"
 import GithubProvider from "next-auth/providers/github"
 import TwitterProvider from "next-auth/providers/twitter"
 import Auth0Provider from "next-auth/providers/auth0"
+import CredentialsProvider from "next-auth/providers/credentials"
 // import AppleProvider from "next-auth/providers/apple"
 // import EmailProvider from "next-auth/providers/email"
 
@@ -50,6 +51,77 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.AUTH0_SECRET,
       issuer: process.env.AUTH0_ISSUER,
     }),
+    CredentialsProvider({
+      name: 'webauthn',
+      credentials: {},
+      async authorize(cred, req) {
+        console.log(cred);
+
+        console.log("TEST HEREREEEEE");
+        return { email: "test@web.de" };
+          const {
+              id,
+              rawId,
+              type,
+              clientDataJSON,
+              authenticatorData,
+              signature,
+              userHandle,
+          } = req.body;
+  
+          const credential = {
+              id,
+              rawId,
+              type,
+              response: {
+                  clientDataJSON,
+                  authenticatorData,
+                  signature,
+                  userHandle,
+              },
+  
+          };
+          const db = await getDb(webauthnDbName);
+          const authenticator = await db.collection<DbCredential & Document>('credentials').findOne({
+              credentialID: credential.id
+          });
+          if (!authenticator) {
+              return null;
+          }
+          const challenge = await getChallenge(authenticator.userID);
+          if (!challenge) {
+              return null;
+          }
+          try {
+              const { verified, authenticationInfo: info } = verifyAuthenticationResponse({
+                  credential: credential as any,
+                  expectedChallenge: challenge.value,
+                  expectedOrigin: origin,
+                  expectedRPID: domain,
+                  authenticator: {
+                      credentialPublicKey: authenticator.credentialPublicKey.buffer as Buffer,
+                      credentialID: base64url.toBuffer(authenticator.credentialID),
+                      counter: authenticator.counter,
+                  },
+              });
+  
+              if (!verified || !info) {
+                  return null;
+              }
+              await db.collection<DbCredential>('credentials').updateOne({
+                  _id: authenticator._id
+              }, {
+                  $set: {
+                      counter: info.newCounter
+                  }
+              })
+          } catch (err) {
+              console.log(err);
+              return null;
+          }
+          return { email: authenticator.userID };
+      }
+  })
   ],
   theme: {
     colorScheme: "light",
