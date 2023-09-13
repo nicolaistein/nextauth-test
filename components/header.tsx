@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { signIn, signOut, useSession } from "next-auth/react"
 import styles from "./header.module.css"
+import "@corbado/webcomponent"
 
 // The approach used in this component shows how to build a sign in and sign out
 // component that works on pages which support both client and server side
@@ -25,12 +26,13 @@ export default function Header() {
               <span className={styles.notSignedInText}>
                 You are not signed in
               </span>
-              <a
-                href={`/api/auth/signin`}
+              <a 
+       //         href={`/api/auth/signin`}
+                href={`/auth/signin`}
                 className={styles.buttonPrimary}
                 onClick={(e) => {
-                  e.preventDefault()
-                  signIn()
+        //          e.preventDefault()
+        //          signIn()
                 }}
               >
                 Sign in
@@ -50,6 +52,7 @@ export default function Header() {
                 <br />
                 <strong>{session.user.email ?? session.user.name}</strong>
               </span>
+              
               <a
                 href={`/api/auth/signout`}
                 className={styles.button}
@@ -89,6 +92,10 @@ export default function Header() {
           </li>
         </ul>
       </nav>
+
+      {session?.user && (<corbado-passkey-associate 
+            project-id="pro-1191574164386091635"
+            association-token="<assocation token>"/>)}
     </header>
   )
 }

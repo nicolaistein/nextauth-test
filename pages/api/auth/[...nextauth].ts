@@ -55,10 +55,11 @@ export const authOptions: NextAuthOptions = {
       name: 'webauthn',
       credentials: {},
       async authorize(cred, req) {
-        console.log(cred);
+        console.log("Cred: ", cred);
 
-        console.log("TEST HEREREEEEE");
-        return { email: "test@web.de" };
+        const {email} = req.body;
+        
+        return { email };
           const {
               id,
               rawId,
