@@ -18,6 +18,7 @@
     "Lluis Agusti <hi@llu.lu>"
   ],
   "dependencies": {
+    "@corbado/node-sdk": "^1.1.16",
     "@corbado/webcomponent": "^1.0.51",
     "@simplewebauthn/browser": "^8.0.2",
     "next": "latest",

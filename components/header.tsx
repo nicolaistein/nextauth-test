@@ -1,15 +1,52 @@
 import Link from "next/link"
 import { signIn, signOut, useSession } from "next-auth/react"
 import styles from "./header.module.css"
-import "@corbado/webcomponent"
+import axios from "axios"
+import {SDK, Configuration} from "@corbado/node-sdk";
+import React, { useCallback, useEffect, useState } from "react";
+
+
+const PASSKEY_CREATION_SUCCESSFUL = "PASSKEY_CREATION_SUCCESSFUL"
+const PASSKEY_CREATION_FAILED = "PASSKEY_CREATION_FAILED"
+const DEVICE_NOT_PASSKEY_READY = "DEVICE_NOT_PASSKEY_READY"
+
+const config = new Configuration("pro-4980969548765423728", "corbado1_HPA5LR4Yg6dSfFpDCcyMSeyL9QUZC2");
+const corbado = new SDK(config);
+
+interface AssociationToken {
+  associationToken: string
+}
 
 // The approach used in this component shows how to build a sign in and sign out
 // component that works on pages which support both client and server side
 // rendering, and avoids any flash incorrect content on initial page load.
-export default function Header() {
+export  default async function Header() {
   const { data: session, status } = useSession()
-  const loading = status === "loading"
 
+
+
+  console.log("Corbado projID: " + process.env.CORBADO_PROJECT_ID);
+
+
+  // Instead of clicking on a button, you can also start the backend API call, when the user opens a new page
+  // It's only important to note, that you can only use the <corbado-passkey-associate/> web component if
+  // an association token has been created before.
+  const handleButtonClick = async () => {
+    try {
+      console.log("Nextauth url: " + process.env.NEXTAUTH_URL);
+        // loginIdentifier needs to be obtained via a backend call or your current state / session management
+        // it should be a dynamic value depending on the current logged-in user
+        const response = await axios.post<AssociationToken>(process.env.NEXTAUTH_URL + "/api/createAssociationToken", {
+            loginIdentifier: "nic+20@corbado.com",
+            loginIdentifierType: "email"
+        })
+        setAssociationToken(response.data)
+    } catch (err) {
+        console.log(err)
+    }
+  }
+ 
+  
   return (
     <header>
       <noscript>
@@ -21,24 +58,6 @@ export default function Header() {
             !session && loading ? styles.loading : styles.loaded
           }`}
         >
-          {!session && (
-            <>
-              <span className={styles.notSignedInText}>
-                You are not signed in
-              </span>
-              <a 
-       //         href={`/api/auth/signin`}
-                href={`/auth/signin`}
-                className={styles.buttonPrimary}
-                onClick={(e) => {
-        //          e.preventDefault()
-        //          signIn()
-                }}
-              >
-                Sign in
-              </a>
-            </>
-          )}
           {session?.user && (
             <>
               {session.user.image && (
@@ -93,9 +112,14 @@ export default function Header() {
         </ul>
       </nav>
 
-      {session?.user && (<corbado-passkey-associate 
-            project-id="pro-1191574164386091635"
-            association-token="<assocation token>"/>)}
+      {session?.user && (
+        <>
+
+            <button onClick={handleButtonClick}>Add passkey to my account</button>
+            <p> Passkey associate</p>
+          
+          </>
+            )}
     </header>
   )
 }
