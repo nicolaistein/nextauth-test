@@ -55,72 +55,10 @@ export const authOptions: NextAuthOptions = {
       name: 'webauthn',
       credentials: {},
       async authorize(cred, req) {
+        console.log("CredentialsProvider called")
         console.log("Cred: ", cred);
 
-        const {email} = req.body;
-        
-        return { email };
-          const {
-              id,
-              rawId,
-              type,
-              clientDataJSON,
-              authenticatorData,
-              signature,
-              userHandle,
-          } = req.body;
-  
-          const credential = {
-              id,
-              rawId,
-              type,
-              response: {
-                  clientDataJSON,
-                  authenticatorData,
-                  signature,
-                  userHandle,
-              },
-  
-          };
-          const db = await getDb(webauthnDbName);
-          const authenticator = await db.collection<DbCredential & Document>('credentials').findOne({
-              credentialID: credential.id
-          });
-          if (!authenticator) {
-              return null;
-          }
-          const challenge = await getChallenge(authenticator.userID);
-          if (!challenge) {
-              return null;
-          }
-          try {
-              const { verified, authenticationInfo: info } = verifyAuthenticationResponse({
-                  credential: credential as any,
-                  expectedChallenge: challenge.value,
-                  expectedOrigin: origin,
-                  expectedRPID: domain,
-                  authenticator: {
-                      credentialPublicKey: authenticator.credentialPublicKey.buffer as Buffer,
-                      credentialID: base64url.toBuffer(authenticator.credentialID),
-                      counter: authenticator.counter,
-                  },
-              });
-  
-              if (!verified || !info) {
-                  return null;
-              }
-              await db.collection<DbCredential>('credentials').updateOne({
-                  _id: authenticator._id
-              }, {
-                  $set: {
-                      counter: info.newCounter
-                  }
-              })
-          } catch (err) {
-              console.log(err);
-              return null;
-          }
-          return { email: authenticator.userID };
+        return true;
       }
   })
   ],

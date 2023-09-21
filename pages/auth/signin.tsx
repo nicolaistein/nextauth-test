@@ -3,44 +3,80 @@ import { getProviders, signIn } from "next-auth/react"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../api/auth/[...nextauth]";
 import { startAuthentication } from '@simplewebauthn/browser';
+import { useCallback, useEffect, useState } from "react";
 
-async function handleWebauthn() {
-    const url = new URL(
-        'https://pro-1191574164386091635.frontendapi.corbado.io/api/auth/webauthn/authenticate',
-        window.location.origin,
-    );
-    url.search = new URLSearchParams({ email }).toString();
-    const optionsResponse = await fetch(url.toString());
-
-    if (optionsResponse.status !== 200) {
-        throw new Error('Could not get authentication options from server');
-    }
-    const opt: PublicKeyCredentialRequestOptionsJSON = await optionsResponse.json();
-
-    if (!opt.allowCredentials || opt.allowCredentials.length === 0) {
-        throw new Error('There is no registered credential.')
-    }
-
-    const credential = await startAuthentication(opt);
-
-    await signIn('credentials', {
-        id: credential.id,
-        rawId: credential.rawId,
-        type: credential.type,
-        clientDataJSON: credential.response.clientDataJSON,
-        authenticatorData: credential.response.authenticatorData,
-        signature: credential.response.signature,
-        userHandle: credential.response.userHandle,
-    })
-}
+const PASSKEY_LOGIN_SUCCESSFUL = "PASSKEY_LOGIN_SUCCESSFUL"
+const PASSKEY_LOGIN_FAILED = "PASSKEY_LOGIN_FAILED"
+const PASSKEY_NOT_EXISTS = "PASSKEY_NOT_EXISTS"
 
 export default function SignIn({ providers }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const [ref, setRef] = useState<any | null>(null)
+  const [session, setSession] = useState<any>(null);
+
+  // The following event handlers can be used to react to different events from the web component
+  const onPasskeyLoginSuccessful = useCallback((_event: CustomEvent) => {
+      console.log("Passkey login successful")
+      console.log(_event)
+      signIn("credentials", { token: _event.detail.token })
+  }, [])
+
+  const onPasskeyLoginFailed = useCallback((_event: CustomEvent) => {
+      console.log("Passkey login failed")
+      console.log(_event)
+  }, [])
+
+  const onPasskeyNotExists = useCallback((_event: CustomEvent) => {
+      console.log("Passkey not exists")
+      console.log(_event)
+  }, [])
 
 
   var providersNew = Object.values(providers);
   providersNew = providersNew.filter(function (el) {
     return el.name != "webauthn";
     });
+
+
+    useEffect(() => {
+      // This will run only on client-side
+      import('@corbado/webcomponent')
+          .then(module => {
+              const Corbado = module.default || module;
+              setSession(new Corbado.Session("pro-2808756695548043260"));
+          })
+          .catch(err => {
+              console.log(err);
+          });
+  }, [])
+
+  useEffect(() => {
+      // Refresh the session whenever it changes
+      if (session) {
+          session.refresh(() => {
+          });
+      }
+  }, [session]);
+
+
+  useEffect(() => {
+
+      // Create and remove the event listeners
+      if (ref) {
+          ref.addEventListener(PASSKEY_LOGIN_SUCCESSFUL, onPasskeyLoginSuccessful)
+          ref.addEventListener(PASSKEY_LOGIN_FAILED, onPasskeyLoginFailed)
+          ref.addEventListener(PASSKEY_NOT_EXISTS, onPasskeyNotExists)
+      }
+
+      // Cleanup function
+      return () => {
+          if (ref) {
+              ref.removeEventListener(PASSKEY_LOGIN_SUCCESSFUL, onPasskeyLoginSuccessful)
+              ref.removeEventListener(PASSKEY_LOGIN_FAILED, onPasskeyLoginFailed)
+              ref.removeEventListener(PASSKEY_NOT_EXISTS, onPasskeyNotExists)
+          }
+
+      };
+  }, [ref, onPasskeyLoginSuccessful, onPasskeyLoginFailed, onPasskeyNotExists,])
 
   return (
     <>
@@ -54,10 +90,10 @@ export default function SignIn({ providers }: InferGetServerSidePropsType<typeof
       ))}
       <p>---- OR ----</p>
       <div key="webauthn">
-        <input type="text" id="email" name="email" placeholder="email"/>
-        <button onClick={() => handleWebauthn()}>
-            Sign in with webauthn
-        </button>
+                <corbado-passkey-associate-login
+                    project-id="pro-2808756695548043260"
+                    ref={setRef}
+                />
       </div>
     </>
   )
