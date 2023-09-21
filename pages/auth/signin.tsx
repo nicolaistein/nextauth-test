@@ -1,23 +1,30 @@
-import type { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
+import type { GetServerSidePropsContext, InferGetServerSidePropsType, NextApiRequest, NextApiResponse } from "next";
 import { getProviders, signIn } from "next-auth/react"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../api/auth/[...nextauth]";
-import { startAuthentication } from '@simplewebauthn/browser';
 import { useCallback, useEffect, useState } from "react";
 
 const PASSKEY_LOGIN_SUCCESSFUL = "PASSKEY_LOGIN_SUCCESSFUL"
 const PASSKEY_LOGIN_FAILED = "PASSKEY_LOGIN_FAILED"
 const PASSKEY_NOT_EXISTS = "PASSKEY_NOT_EXISTS"
 
-export default function SignIn({ providers }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function SignIn( 
+   { providers }: InferGetServerSidePropsType<typeof getServerSideProps>,  req: NextApiRequest,
+   res: NextApiResponse) {
   const [ref, setRef] = useState<any | null>(null)
   const [session, setSession] = useState<any>(null);
 
   // The following event handlers can be used to react to different events from the web component
-  const onPasskeyLoginSuccessful = useCallback((_event: CustomEvent) => {
+  const onPasskeyLoginSuccessful = useCallback(async (_event: CustomEvent) => {
       console.log("Passkey login successful")
-      console.log(_event)
-      signIn("credentials", { token: _event.detail.token })
+      console.log(JSON.stringify(_event))
+      console.log(JSON.stringify(_event.detail))
+      console.log("REFRESHING SESSION")
+      var headers = req
+      console.log("Cookies: ", headers)
+      signIn("credentials", { user: "user"})
+
+    
   }, [])
 
   const onPasskeyLoginFailed = useCallback((_event: CustomEvent) => {
@@ -42,6 +49,8 @@ export default function SignIn({ providers }: InferGetServerSidePropsType<typeof
       import('@corbado/webcomponent')
           .then(module => {
               const Corbado = module.default || module;
+
+              console.log("Initializing Corbado session")
               setSession(new Corbado.Session("pro-2808756695548043260"));
           })
           .catch(err => {
