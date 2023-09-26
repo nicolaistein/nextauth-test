@@ -6,7 +6,12 @@ import TwitterProvider from "next-auth/providers/twitter"
 import Auth0Provider from "next-auth/providers/auth0"
 import CredentialsProvider from "next-auth/providers/credentials"
 
+import * as jose from "jose";
+import Corbado from '@corbado/webcomponent';
 import {SDK, Configuration} from '@corbado/node-sdk';
+import http from 'http';
+import https from 'https';
+require('https');
 
 const projectID = process.env.CORBADO_PROJECT_ID;
 const apiSecret = process.env.API_SECRET;
@@ -66,10 +71,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {},
       async authorize(cred, req) {
 
-        console.log("CredentialsProvider called")
-        console.log("Cred: ", cred);
-        console.log("Req: ", req);
-
+        console.log("CredentialsProvider called");
 
         const config = new Configuration(projectID, apiSecret);
         const corbado = new SDK(config);
@@ -86,22 +88,76 @@ export const authOptions: NextAuthOptions = {
         }
 
         var cbo_short_session = req.headers.cookie.split("; ").find(row => row.startsWith("cbo_short_session"));
-
-    /*    var cookies = req.headers.cookie.split("; ");
-        for(var i = 0; i < cookies.length; i++) {
-          var cookie = cookies[i].split("=");
-          console.log("Cookie: ", cookie)
-          if (cookie[0] == "cbo_short_session") {
-            console.log("Found cbo_short_session cookie: ", cookie[1])
-            break;
-          }
-        }
-        */
         console.log("CBO Short Session: ", cbo_short_session);
         var token = cbo_short_session.split("=")[1];
         console.log("Token: ", token);
+
+
+
+        var issuer = "https://" + projectID + ".frontendapi.corbado.io";
+        var jwksUrl = issuer + "/.well-known/jwks"; 
+
+        const JWKS = jose.createRemoteJWKSet(new URL(jwksUrl), {
+          cacheMaxAge: 10 * 60 * 1000
+        })
+        const options = {
+            issuer: issuer,
+        }
+
+        try {
+            const {payload} = await jose.jwtVerify(token, JWKS, options)
+            if (payload.iss === issuer) {
+              console.log("issuerValid!")
+              console.log(payload.sub);
+              console.log(payload.name);
+              console.log(payload.email);
+              console.log(payload.phoneNumber);
+              console.log("Returning...")
+              return { email: payload.email };
+            }else{
+              console.log("issuer not valid")
+            }
+        }
+        catch (e) {
+            console.log("Error: ", e)
+        }
+
+
+
+/*
+        var url = "https://" + projectID + ".frontendapi.corbado.io/v1/me";
+
+        console.log("URL: ", url);
+
+        var resp = https.get(url, {
+          headers: {
+            "Authorization": "Bearer " + token,
+            "cookie": "cbo_short_session=" + token,+
+          }
+        }, function(response) {
+          console.log("Response from http.get")
+      //    console.log(response);
+      response.on('error', function (err) {
+
+        console.log("Error: ", err);
+      }
+
+      );
+      response.on('data', function (chunk) {
+        console.log('BODY: ' + chunk);
+      });
+      console.log(response.body)
+        },
+      );
+
+        console.log("Response: ", resp);
+        console.log("Response body: ", resp.body)
+        
+*/
+
+/*
         req.cookies = {"cbo_short_session": token};
-        console.log("final req object: ", req )
+        console.log("final req object: ", req)
       //  const user = await corbado.session.getCurrentUser({cookies: {cbo_short_session: token}, "headers": {"authorization": "Test"}});
 
         const user = await corbado.session.getCurrentUser(req);
@@ -119,7 +175,7 @@ export const authOptions: NextAuthOptions = {
         }else{
           console.log("User is not authenticated");
         }
-
+*/
       
         
       }
