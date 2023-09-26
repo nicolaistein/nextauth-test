@@ -2,12 +2,6 @@ import type { GetServerSidePropsContext, InferGetServerSidePropsType, NextApiReq
 import { getProviders, signIn } from "next-auth/react"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../api/auth/[...nextauth]";
-import { useCallback, useEffect, useState } from "react";
-var request = require('request');
-
-const PASSKEY_LOGIN_SUCCESSFUL = "PASSKEY_LOGIN_SUCCESSFUL"
-const PASSKEY_LOGIN_FAILED = "PASSKEY_LOGIN_FAILED"
-const PASSKEY_NOT_EXISTS = "PASSKEY_NOT_EXISTS"
 
 const projectID = "pro-2808756695548043260";
 console.log("Project ID: ", projectID)
@@ -17,7 +11,7 @@ export default function Redirect(
    { providers }: InferGetServerSidePropsType<typeof getServerSideProps>,  req: NextApiRequest,
    res: NextApiResponse) {
   
-      signIn("credentials", { user: "user"})
+      signIn("credentials", { provider: "corbado"})
 
   return (
     <>

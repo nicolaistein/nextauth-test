@@ -5,11 +5,9 @@ import GithubProvider from "next-auth/providers/github"
 import TwitterProvider from "next-auth/providers/twitter"
 import Auth0Provider from "next-auth/providers/auth0"
 import CredentialsProvider from "next-auth/providers/credentials"
-
 import * as jose from "jose";
 
 const projectID = process.env.CORBADO_PROJECT_ID;
-console.log("Project ID: ", projectID);
 
 export const authOptions: NextAuthOptions = {
   // https://next-auth.js.org/configuration/providers/oauth
@@ -39,6 +37,10 @@ export const authOptions: NextAuthOptions = {
       name: 'webauthn',
       credentials: {},
       async authorize(cred, req) {
+        console.log("Credentials: ", cred);
+
+        if(cred.provider !== "corbado") return null;
+
         var cbo_short_session = req.headers.cookie.split("; ").find(row => row.startsWith("cbo_short_session"));
         console.log("CBO Short Session: ", cbo_short_session);
         var token = cbo_short_session.split("=")[1];
@@ -56,10 +58,7 @@ export const authOptions: NextAuthOptions = {
             const {payload} = await jose.jwtVerify(token, JWKS, options)
             if (payload.iss === issuer) {
               console.log("issuerValid!")
-              console.log(payload.sub);
-              console.log(payload.name);
-              console.log(payload.email);
-              console.log(payload.phoneNumber);
+              console.log(payload);
               console.log("Returning...")
 
               //Load data from database

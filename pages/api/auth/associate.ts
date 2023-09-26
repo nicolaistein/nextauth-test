@@ -36,10 +36,10 @@ const corbado = new Corbado.SDK(config);
             console.log("Token: ", associationToken.data.token);
             return res.status(200).send(associationToken.data.token);
         } else {
-            return res.status(500).send({error: 'Association token creation unsuccessful'});
+            return res.status(200).send({error: 'error_creating_association_token'});
         }
     } catch (err) {
         console.log(err)
-        res.status(500).send({error: 'An error occurred while creating the association token'});
+        res.status(200).send({error: 'error_creating_association_token'});
     }
 }
