@@ -98,11 +98,11 @@ export default function SignIn(
         </div>
       ))}
       <p>---- OR ----</p>
-      <div key="webauthn">
-                <corbado-passkey-associate-login
-                    project-id="pro-2808756695548043260"
-                    ref={setRef}
-                />
+      <div>
+        <corbado-auth project-id="pro-2808756695548043260" conditional="yes">
+          <input name="username" id="corbado-username"
+          required autocomplete="webauthn"/>
+        </corbado-auth>
       </div>
     </>
   )
