@@ -68,7 +68,7 @@ export  default function Header() {
         // loginIdentifier needs to be obtained via a backend call or your current state / session management
         // it should be a dynamic value depending on the current logged-in user
         const response = await axios.post<AssociationToken>("/api/auth/associate", {
-            loginIdentifier: "nic+1@corbado.com",
+            loginIdentifier: "nic+3@corbado.com",
             loginIdentifierType: "email"
         })
         console.log("Response: ", response.data)
@@ -115,18 +115,29 @@ export  default function Header() {
               </a>
             </>
           )}
+          {!session?.user && (
+            <>
+              <span className={styles.notSignedInText}>
+                <small>Not signed in</small>
+              </span>
+              <a
+                href={`/api/auth/signin`}
+                className={styles.button}
+                onClick={(e) => {
+                  e.preventDefault()
+                  signIn()
+                }}
+              >
+                Sign in
+              </a>
+            </>
+          )}
         </p>
       </div>
       <nav>
         <ul className={styles.navItems}>
           <li className={styles.navItem}>
             <Link href="/">Home</Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/client">Client</Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/server">Server</Link>
           </li>
           <li className={styles.navItem}>
             <Link href="/protected">Protected</Link>

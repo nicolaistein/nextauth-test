@@ -7,44 +7,13 @@ import Auth0Provider from "next-auth/providers/auth0"
 import CredentialsProvider from "next-auth/providers/credentials"
 
 import * as jose from "jose";
-import Corbado from '@corbado/webcomponent';
-import {SDK, Configuration} from '@corbado/node-sdk';
-import http from 'http';
-import https from 'https';
-require('https');
 
 const projectID = process.env.CORBADO_PROJECT_ID;
-const apiSecret = process.env.API_SECRET;
-
 console.log("Project ID: ", projectID);
-console.log("API Secret: ", apiSecret);
 
-
-// import AppleProvider from "next-auth/providers/apple"
-// import EmailProvider from "next-auth/providers/email"
-
-// For more information on each option (and a full list of options) go to
-// https://next-auth.js.org/configuration/options
 export const authOptions: NextAuthOptions = {
   // https://next-auth.js.org/configuration/providers/oauth
   providers: [
-    /* EmailProvider({
-         server: process.env.EMAIL_SERVER,
-         from: process.env.EMAIL_FROM,
-       }),
-    // Temporarily removing the Apple provider from the demo site as the
-    // callback URL for it needs updating due to Vercel changing domains
-
-    Providers.Apple({
-      clientId: process.env.APPLE_ID,
-      clientSecret: {
-        appleId: process.env.APPLE_ID,
-        teamId: process.env.APPLE_TEAM_ID,
-        privateKey: process.env.APPLE_PRIVATE_KEY,
-        keyId: process.env.APPLE_KEY_ID,
-      },
-    }),
-    */
     FacebookProvider({
       clientId: process.env.FACEBOOK_ID,
       clientSecret: process.env.FACEBOOK_SECRET,
@@ -114,6 +83,9 @@ export const authOptions: NextAuthOptions = {
       return token
     },
   },
+  pages: {
+    signIn: '/auth/signin'
+  }
 }
 
 export default NextAuth(authOptions)
